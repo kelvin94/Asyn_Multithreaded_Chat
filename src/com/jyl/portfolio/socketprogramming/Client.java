@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 class Client {
 
@@ -16,6 +17,8 @@ class Client {
     private PrintWriter out;
     private BufferedReader in;
     private BufferedReader stdInput;
+    private ExecutorService executor = Executors.newFixedThreadPool(1);
+
 
     public Client() {
     }
@@ -28,29 +31,30 @@ class Client {
 
         SocketAddress endpoint = new InetSocketAddress(hostname, port);
         int timeout = 999;
-        System.out.println("creating connection...");
         try {
             socket.connect(endpoint, timeout);
         } catch (IOException e) {
             e.printStackTrace();
+            print(e.getMessage());
         }
     }
 
     public void initStreams() {
         try {
+            // init stream for sending msg
             out = new PrintWriter(
                     socket.getOutputStream(), true
             );
+            // init stream reading console input
             stdInput = new BufferedReader(
                     new InputStreamReader(
                             System.in
                     )
             );
-
+            // init stream for listening msgs coming from server
             in = new BufferedReader(new InputStreamReader(
                     socket.getInputStream()
             ));
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -70,31 +74,47 @@ class Client {
 
     public void initServerListener() {
         // Open a separate thread to listen for msgs coming from server
-            ExecutorService executor = Executors.newFixedThreadPool(1);
-            ListenFromServer listeningThread = new ListenFromServer(in);
-            executor.execute(listeningThread);
+        ListenFromServer listeningThread = new ListenFromServer(in);
+        executor.execute(listeningThread);
     }
 
     public void sendMessage() {
-        System.out.println("sending data...");
         String inline;
         try {
+            // infinite loop to get input from Client in the console
             while (!(inline = stdInput.readLine()).equals("bye")) {
                 System.out.println("client sending: " + inline);
                 out.println(inline);
             }
-            out.println(inline);
-            System.out.println("Client said bye, closing outputstream");
+            out.println(inline); // Client sends "bye"
+            System.out.println("Client said bye");
         } catch (IOException e) {
             e.printStackTrace();
+            print(e.getMessage());
         } finally {
-            try {
-                System.out.println("closing socket...");
-                socket.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            close();
         }
+    }
+
+    private void close() {
+        executor.shutdown();
+        try {
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            print(e.getMessage());
+        }
+        try {
+            out.close();
+            in.close();
+            stdInput.close();
+            socket.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            print(e.getMessage());
+        }
+
     }
 
     public static void main(final String[] args) {
@@ -105,5 +125,13 @@ class Client {
         client.initClientInfo();
         client.sendMessage();
 
+    }
+
+
+    /**
+     * Helper methods
+     */
+    private void print(String msgToPrint) {
+        System.out.println(msgToPrint);
     }
 }
