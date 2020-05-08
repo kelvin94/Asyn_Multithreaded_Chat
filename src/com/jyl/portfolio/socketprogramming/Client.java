@@ -10,70 +10,94 @@ import java.util.Scanner;
 
 class Client {
 
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    private BufferedReader stdInput;
 
     public Client() {
     }
 
-    public static void main(final String[] args) {
+    public void initConnection() {
         // Create a socket object
-        Socket socket = new Socket();
+        socket = new Socket();
         int port = 9099;
         String hostname = "localhost";
 
         SocketAddress endpoint = new InetSocketAddress(hostname, port);
         int timeout = 999;
-
-        // try-with-resource block to execute ".connect(SocketAddressEndPoint, Milliseconds to time out of trying to
-      // connect)"
-        String identifier = null;
+        System.out.println("creating connection...");
         try {
-            System.out.println("creating connection...");
             socket.connect(endpoint, timeout);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-            PrintWriter out = new PrintWriter(
+    public void initStreams() {
+        try {
+            out = new PrintWriter(
                     socket.getOutputStream(), true
             );
-            boolean flag = true;
-            while(flag) {
-                System.out.println("Your name in the room?");
-                Scanner sc = new Scanner(System.in);
-                identifier = sc.nextLine();
-                out.println("client#"+identifier);
-                if(!identifier.equals("")) flag = false;
-            }
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(
-                    socket.getInputStream()
-            ));
-
-            BufferedReader stdInput = new BufferedReader(
+            stdInput = new BufferedReader(
                     new InputStreamReader(
                             System.in
                     )
             );
-            System.out.println("sending data...");
-            String inline;
-            while (!(inline = stdInput.readLine()).equals("bye")) {
-                    System.out.println("client sending: "+inline);
-                    out.println(inline);
-                    String serverSpeech = in.readLine();
-                    System.out.println("Server said: "+serverSpeech);
-            }
-            out.close();
 
-        } catch (SocketTimeoutException e) {
-            e.printStackTrace();
+            in = new BufferedReader(new InputStreamReader(
+                    socket.getInputStream()
+            ));
         } catch (IOException e) {
-            //TODO: handle exception
+            e.printStackTrace();
+        }
+    }
+
+    public void initClientInfo() {
+        String identifier = null;
+        boolean flag = true;
+        while (flag) {
+            System.out.println("Your name in the room?");
+            Scanner sc = new Scanner(System.in);
+            identifier = sc.nextLine();
+            out.println("client#" + identifier);
+            if (!identifier.equals("")) flag = false;
+        }
+
+
+    }
+
+    public void sendMessage() {
+        System.out.println("sending data...");
+        String inline;
+        try {
+            while (!(inline = stdInput.readLine()).equals("bye")) {
+                System.out.println("client sending: " + inline);
+                out.println(inline);
+//                String serverSpeech = in.readLine();
+//
+//                System.out.println("Server said: " + serverSpeech);
+            }
+            out.println(inline);
+            System.out.println("Client said bye, closing outputstream");
+        } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
+                System.out.println("closing socket...");
                 socket.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
 
+    public static void main(final String[] args) {
+        Client client = new Client();
+        client.initConnection();
+        client.initStreams();
 
+        client.initClientInfo();
+        client.sendMessage();
     }
 }

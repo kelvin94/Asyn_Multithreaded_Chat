@@ -14,7 +14,6 @@ public class Server {
     public Server() {
         // create new ServerSocket listening on certain port
         int port = 9099;
-        ConcurrentHashMap<String, ClientHandler> clientMap;
         try {
             System.out.println("created serverSocket...");
             ServerSocket serverSocket = new ServerSocket(port);
@@ -27,13 +26,14 @@ public class Server {
               //          try-with-resource
                 //          block assumes the code is done and try-with-resource block is done so "socket" object
               //          will be garbage-collected.
+                while(true) {
+                    Socket socket = serverSocket.accept();
+                    // Spawn a thread to handle this client
 
-                Socket socket = serverSocket.accept();
-                // Spawn a thread to handle this client
+                    ClientHandler ch = new ClientHandler(socket);
+                    taskExecutor.execute(ch);
+                }
 
-                ClientHandler ch = new ClientHandler(socket);
-                System.out.println("ready to run task in threadpool");
-                taskExecutor.execute(ch);
 
             } catch (Exception e) {
                 //TODO: handle exception
