@@ -71,6 +71,7 @@ public class ClientHandler implements Runnable {
 
                     } else {
                         System.out.println("Client tells server: " + fromClient);
+                        out.println("Server echo back " + fromClient);
                     }
                     if (fromClient.equals("bye")) {
                         keepGoing =false;

@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 class Client {
 
@@ -48,6 +50,7 @@ class Client {
             in = new BufferedReader(new InputStreamReader(
                     socket.getInputStream()
             ));
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -63,8 +66,13 @@ class Client {
             out.println("client#" + identifier);
             if (!identifier.equals("")) flag = false;
         }
+    }
 
-
+    public void initServerListener() {
+        // Open a separate thread to listen for msgs coming from server
+            ExecutorService executor = Executors.newFixedThreadPool(1);
+            ListenFromServer listeningThread = new ListenFromServer(in);
+            executor.execute(listeningThread);
     }
 
     public void sendMessage() {
@@ -74,9 +82,6 @@ class Client {
             while (!(inline = stdInput.readLine()).equals("bye")) {
                 System.out.println("client sending: " + inline);
                 out.println(inline);
-//                String serverSpeech = in.readLine();
-//
-//                System.out.println("Server said: " + serverSpeech);
             }
             out.println(inline);
             System.out.println("Client said bye, closing outputstream");
@@ -96,8 +101,9 @@ class Client {
         Client client = new Client();
         client.initConnection();
         client.initStreams();
-
+        client.initServerListener();
         client.initClientInfo();
         client.sendMessage();
+
     }
 }
