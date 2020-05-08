@@ -3,6 +3,7 @@ package com.jyl.portfolio.socketprogramming;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -11,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 public class Server {
     protected static ExecutorService taskExecutor = Executors.newFixedThreadPool(3);
 
+    // the map to hold the clients that a client is chating to.
+    private ConcurrentHashMap<String, List<String>> chmap = new ConcurrentHashMap<String, List<String>>();
     public Server() {
         // create new ServerSocket listening on certain port
         int port = 9099;

@@ -2,24 +2,33 @@ package com.jyl.portfolio.socketprogramming;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.Socket;
 
 public class ListenFromServer implements Runnable {
-    BufferedReader in;
-    public ListenFromServer(BufferedReader in) {
+    private static String disconnectType = "disconnect";
+
+    ObjectInputStream in;
+     Socket socket;
+    public ListenFromServer(ObjectInputStream in, Socket socket) {
         this.in = in;
+        this.socket = socket;
     }
     @Override
     public void run() {
+
         boolean keepGoing = true;
-        while(keepGoing) {
-            try {
-                String msg = in.readLine();
-                System.out.println("Server sends back: "+msg);
-            } catch (IOException e) {
+        Message msg = null;
+        try {
+            while((msg = (Message) in.readObject()) != null) {
+                if(msg.getMsgType().equalsIgnoreCase(disconnectType)) break;
+                else System.out.println("Server sends back: "+msg.toString());
+            }
+        } catch (IOException e) {
                 e.printStackTrace();
                 keepGoing = false;
-            }
+        } catch (ClassNotFoundException e) {
+                e.printStackTrace();
         }
     }
 }
