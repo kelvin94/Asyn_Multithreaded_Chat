@@ -6,13 +6,15 @@ import java.io.Serializable;
 public class Message implements Serializable {
     private String msgType;
     private String clientName;
+    private String targettedClient;
     private String messageBody;
     private String date;
 
-    public Message(String msgType, String clientName, String messageBody, String date) {
+    public Message(String msgType, String clientName, String targettedClient,String messageBody, String date) {
         this.msgType = msgType;
         this.clientName = clientName;
         this.messageBody = messageBody;
+        this.targettedClient = targettedClient;
         this.date = date;
     }
 
@@ -58,4 +60,11 @@ public class Message implements Serializable {
         this.clientName = clientName;
     }
 
+    public String getTargettedClient() {
+        return targettedClient;
+    }
+
+    public void setTargettedClient(String targettedClient) {
+        this.targettedClient = targettedClient;
+    }
 }

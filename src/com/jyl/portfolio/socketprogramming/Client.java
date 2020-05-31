@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 class Client {
@@ -23,27 +24,34 @@ class Client {
     private BufferedReader stdInput;
     private ExecutorService executor = Executors.newFixedThreadPool(1);
     private String clientName;
+    private String targetedClient;
 
     public Client() {
+        initConnection();
+        initStreams();
+        initServerListener();
+        initClientInfo();
     }
 
-    public void initConnection() {
+    private void initConnection() {
         // Create a socket object
         socket = new Socket();
-        int port = 9099;
+        int serverPort = 9099;
+;
         String hostname = "localhost";
 
-        SocketAddress endpoint = new InetSocketAddress(hostname, port);
+        SocketAddress serverEndpoint = new InetSocketAddress(hostname, serverPort);
         int timeout = 999;
         try {
-            socket.connect(endpoint, timeout);
+
+            socket.connect(serverEndpoint, timeout);
         } catch (IOException e) {
             e.printStackTrace();
             print(e.getMessage());
         }
     }
 
-    public void initStreams() {
+    private void initStreams() {
         try {
             // init stream for sending msg
             out = new ObjectOutputStream(
@@ -64,17 +72,19 @@ class Client {
         }
     }
 
-    public void initClientInfo() {
-        String identifier = null;
+    private void initClientInfo() {
         boolean flag = true;
         while (flag) {
             System.out.println("Your name in the room?");
             Scanner sc = new Scanner(System.in);
 
-            identifier = sc.nextLine();
-            clientName = identifier;
+            clientName = sc.nextLine();
+            System.out.println("Who are you chatting to?");
+
+            targetedClient = sc.nextLine();
+
             Date date = new Date();
-            Message msg = new Message(initType, identifier, "", date.toString());
+            Message msg = new Message(initType, clientName, targetedClient, "", date.toString());
             try {
                 out.writeObject(msg);
                 out.flush();
@@ -82,29 +92,29 @@ class Client {
                 e.printStackTrace();
                 print(e.getMessage());
             }
-            if (!identifier.equals("")) flag = false;
+            if (!clientName.equals("")) flag = false;
         }
     }
 
-    public void initServerListener() {
+    private void initServerListener() {
         // Open a separate thread to listen for msgs coming from server
         ListenFromServer listeningThread = new ListenFromServer(in, socket);
         executor.execute(listeningThread);
     }
 
-    public void sendMessage() {
+    private void sendMessage() {
         String inline;
         try {
             // infinite loop to get input from Client in the console
             while (!(inline = stdInput.readLine()).equals("bye")) {
                 System.out.println("client sending: " + inline);
                  Date date = new Date();
-                Message msg = new Message(talkType, clientName, inline, date.toString());
+                Message msg = new Message(talkType, clientName,targetedClient, inline, date.toString());
                 out.writeObject(msg);
                 out.flush();
             }
             Date date = new Date();
-            Message msg = new Message(disconnectType, clientName, "", date.toString());
+            Message msg = new Message(disconnectType, clientName, targetedClient,"", date.toString());
             out.writeObject(msg); // Client sends "bye"
             out.flush();
             System.out.println("Client said bye");
@@ -142,10 +152,6 @@ class Client {
 
     public static void main(final String[] args) {
         Client client = new Client();
-        client.initConnection();
-        client.initStreams();
-        client.initServerListener();
-        client.initClientInfo();
         client.sendMessage();
     }
 
