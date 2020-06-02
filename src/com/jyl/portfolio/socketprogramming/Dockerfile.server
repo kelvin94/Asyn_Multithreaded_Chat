@@ -1,0 +1,5 @@
+FROM anapsix/alpine-java:latest
+
+WORKDIR /Server
+COPY ./Server.jar /Server
+CMD ["java", "-jar", "/Server/Server.jar"]

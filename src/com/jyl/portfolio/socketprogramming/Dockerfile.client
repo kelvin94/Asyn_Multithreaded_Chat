@@ -1,0 +1,5 @@
+FROM anapsix/alpine-java:latest
+
+WORKDIR /Client
+COPY ./Client.jar /Client
+CMD ["java", "-jar", "/Client/Client.jar"]
